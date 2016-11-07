@@ -15,20 +15,27 @@ loop do                                             # Server runs forever
   end
   puts lines                                        # Output the full request to stdout
 
-  response = "
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>My first web server</title>
-      </head>
-      <body>
-        <h1>My first web server</h1>
-        <p>Oh hey, this is my first HTML response!</p>
-      </body>
-  </html>"
+filename = lines[0].gsub(/GET \//, '').gsub(/\ HTTP.*/, '')
+  if File.exists?(filename)
+    response_body = File.read(filename)
+    success_header = []
+    success_header << "HTTP/1.1 200 OK"
+    success_header << "Content-Type: text/html" # should reflect the appropriate content type (HTML, CSS, text, etc)
+    success_header << "Content-Length: #{response_body.length}" # should be the actual size of the response body
+    success_header << "Connection: close"
+    header = success_header.join("\r\n")
+  else
+    response_body = "File Not Found \n" #must indicate end of string with \n
+    not_found_header = []
+    not_found_header << "HTTP/1.1 404 Not Found"
+    not_found_header << "Content-Type: text/plain" # is always text/plain
+    not_found_header << "Content-Length: #{response_body.length}" # should the actual size of the response body
+    not_found_header << "Connection: close"
+    header = not_found_header.join("\r\n")
+  end
 
-  client.puts(response)
-
-  client.puts(Time.now.ctime)                       # Output the current time to the client
+  response = [header, response_body].join("\r\n\r\n")
+  client.puts(response_body)
+  #client.puts(Time.now.ctime)                       # Output the current time to the client
   client.close                                      # Disconnect from the client
 end
